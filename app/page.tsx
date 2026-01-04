@@ -1,18 +1,19 @@
-'use client'
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { addTransaction, getTransactions, deleteTransaction } from './action';
+// Ensure deleteTransaction is exported from your actions file
+import { addTransaction, getTransactions, deleteTransaction } from './action'; 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Wallet, TrendingUp, TrendingDown, Trash2, Calendar, Plus, PieChart as PieIcon } from 'lucide-react';
 import { SubmitButton } from '@/components/SubmitButton';
 
 // --- 1. CONFIGURATION ---
 const CATEGORIES = [
-  'Food Essential', 'Food Ultimate', 'Travel', 'General', 'Allowance'
+  'Food Essential', 'Food Ultimate', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping'
 ];
 
 // Modern Neon Palette
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#6366f1'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#6366f1', '#06b6d4'];
 const BUDGET_COLORS = ['#ef4444', '#10b981'];
 
 type Transaction = {
@@ -76,8 +77,9 @@ export default function Home() {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 border border-slate-700 p-2 rounded shadow-xl">
-          <p className="text-gray-200 font-bold text-sm">{`${payload[0].name}: ₹${payload[0].value}`}</p>
+        <div className="bg-slate-900/90 border border-slate-700 p-3 rounded-lg shadow-xl backdrop-blur-sm">
+          <p className="text-gray-200 font-bold text-sm">{payload[0].name}</p>
+          <p className="text-white font-mono font-bold">₹{payload[0].value}</p>
         </div>
       );
     }
@@ -89,40 +91,40 @@ export default function Home() {
     : { bg: 'bg-emerald-600', light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' };
 
   return (
-    <main className="min-h-screen bg-[#0B0C15] text-white p-4 md:p-8 flex justify-center selection:bg-indigo-500/30">
+    <main className="min-h-screen bg-[#0B0C15] text-white p-4 pb-24 md:p-8 flex justify-center selection:bg-indigo-500/30">
       
-      {/* Background Gradients for Atmosphere */}
+      {/* Background Gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/20 rounded-full blur-[80px] md:blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-600/10 rounded-full blur-[80px] md:blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-5xl space-y-6">
+      <div className="w-full max-w-5xl space-y-4 md:space-y-6">
         
         {/* --- HEADER CARD --- */}
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900/40 backdrop-blur-xl border border-white/10 p-8 shadow-2xl">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900/40 backdrop-blur-xl border border-white/10 p-6 md:p-8 shadow-2xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             
             {/* Balance Section */}
             <div>
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Wallet className="w-4 h-4" />
-                <span className="text-sm font-medium uppercase tracking-widest">{activeTab} Balance</span>
+                <span className="text-xs md:text-sm font-medium uppercase tracking-widest">{activeTab} Balance</span>
               </div>
-              <h1 className="text-5xl md:text-6xl font-black tracking-tight">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight break-all">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
                   ₹{balance.toLocaleString()}
                 </span>
               </h1>
             </div>
 
-            {/* Toggle Tabs */}
-            <div className="flex bg-black/30 p-1.5 rounded-xl border border-white/5">
+            {/* Toggle Tabs - Full width on mobile */}
+            <div className="w-full md:w-auto flex bg-black/30 p-1.5 rounded-xl border border-white/5">
               {['online', 'cash'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 capitalize ${
+                  className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 capitalize ${
                     activeTab === tab 
                       ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25' 
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -137,41 +139,46 @@ export default function Home() {
 
         {/* --- CHARTS GRID --- */}
         {transactions.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             
             {/* Spending Chart */}
-            <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+            <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden flex flex-col">
                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-50" />
-               <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-slate-300 flex items-center gap-2">
-                    <PieIcon className="w-4 h-4 text-blue-400" /> Spending
-                  </h3>
-               </div>
-               <div className="h-56 w-full">
+               <h3 className="font-bold text-slate-300 flex items-center gap-2 mb-4">
+                 <PieIcon className="w-4 h-4 text-blue-400" /> Spending
+               </h3>
+               <div className="h-64 w-full -ml-2">
                  <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
-                     <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={4} dataKey="value" stroke="none">
+                     <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
                        {categoryData.map((entry, index) => (
                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                        ))}
                      </Pie>
                      <Tooltip content={<CustomTooltip />} />
-                     <Legend verticalAlign="bottom" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', opacity: 0.7 }} />
+                     <Legend 
+                        layout="horizontal" 
+                        verticalAlign="bottom" 
+                        align="center"
+                        iconType="circle" 
+                        iconSize={8} 
+                        wrapperStyle={{ fontSize: '12px', opacity: 0.7, paddingTop: '10px' }} 
+                     />
                    </PieChart>
                  </ResponsiveContainer>
                </div>
             </div>
 
             {/* Budget Chart */}
-            <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden flex flex-col">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-green-500 opacity-50" />
                <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-slate-300 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-green-400" /> Budget
                   </h3>
-                  <span className="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-400">Income: ₹{totalIncome}</span>
+                  <span className="text-[10px] md:text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-400">In: ₹{totalIncome}</span>
                </div>
-               <div className="h-56 w-full relative">
+               <div className="h-64 w-full relative">
                  <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
                      <Pie data={budgetData} cx="50%" cy="50%" startAngle={180} endAngle={0} innerRadius={60} outerRadius={80} paddingAngle={0} dataKey="value" stroke="none">
@@ -182,8 +189,8 @@ export default function Home() {
                    </PieChart>
                  </ResponsiveContainer>
                  {/* Center Percentage */}
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pt-10 pointer-events-none">
-                    <span className="text-2xl font-black text-white">{Math.round((totalExpense/totalIncome)*100) || 0}%</span>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pt-4 pointer-events-none">
+                    <span className="text-3xl font-black text-white">{Math.round((totalExpense/totalIncome)*100) || 0}%</span>
                     <span className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Used</span>
                  </div>
                </div>
@@ -192,8 +199,8 @@ export default function Home() {
         )}
 
         {/* --- INPUT FORM --- */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl">
-          <div className="flex gap-4 mb-6">
+        <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-4 md:p-6 shadow-xl">
+          <div className="flex gap-3 mb-6">
              <button 
                onClick={() => setTxType('expense')} 
                className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all border ${
@@ -243,11 +250,12 @@ export default function Home() {
               <input name="amount" type="number" placeholder="0" className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-8 pr-4 font-bold text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors" required />
             </div>
             
-            <div className="flex-1">
-              <select name="category" defaultValue="" className="w-full h-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors appearance-none" required>
-                <option value="" disabled>Select Category</option>
-                {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-slate-900">{cat}</option>)}
-              </select>
+            <div className="relative flex-1">
+               <select name="category" defaultValue="" className="w-full h-full min-h-[48px] bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors appearance-none" required>
+                 <option value="" disabled>Select Category</option>
+                 {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-slate-900">{cat}</option>)}
+               </select>
+               {/* Custom arrow could go here if needed, but keeping it simple */}
             </div>
             
             <SubmitButton colorClass={theme.bg} />
@@ -255,29 +263,34 @@ export default function Home() {
         </div>
 
         {/* --- TRANSACTION LIST --- */}
-        <div className="space-y-3 pb-12">
+        <div className="space-y-3 pb-8">
            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest pl-2">Recent Transactions</h3>
            {currentData.map((t) => (
-             <div key={t.id} className="group flex justify-between items-center bg-slate-900/40 border border-white/5 hover:border-white/10 hover:bg-slate-800/40 p-4 rounded-2xl transition-all duration-300 hover:translate-x-1">
-               <div className="flex items-center gap-4">
-                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+             <div key={t.id} className="group flex justify-between items-center bg-slate-900/40 border border-white/5 hover:border-white/10 hover:bg-slate-800/40 p-3 md:p-4 rounded-2xl transition-all duration-300">
+               <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                 <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                     {t.type === 'income' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                  </div>
-                 <div>
-                   <p className="font-bold text-slate-200">{t.category}</p>
+                 <div className="min-w-0">
+                   <p className="font-bold text-slate-200 truncate">{t.category}</p>
                    <p className="text-xs text-slate-500 font-mono mt-0.5">{new Date(t.createdAt).toLocaleDateString()}</p>
                  </div>
                </div>
-               <div className="flex items-center gap-4">
-                 <span className={`font-mono font-bold text-lg ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+               <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                 <span className={`font-mono font-bold text-base md:text-lg ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                    {t.type === 'income' ? '+' : '-'} ₹{t.amount}
                  </span>
-                 <button onClick={async () => {
-                     if(confirm('Delete?')) {
-                       await deleteTransaction(t.id);
-                       getTransactions().then(setTransactions);
-                     }
-                  }} className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all">
+                 
+                 {/* MOBILE FIX: Opacity 100 on mobile, Opacity 0 on desktop until hover */}
+                 <button 
+                    onClick={async () => {
+                      if(confirm('Delete?')) {
+                        await deleteTransaction(t.id);
+                        getTransactions().then(setTransactions);
+                      }
+                    }} 
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                 >
                    <Trash2 className="w-4 h-4" />
                  </button>
                </div>
