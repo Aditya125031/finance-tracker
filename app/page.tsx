@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { addTransaction, getTransactions, deleteTransaction } from './action';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Wallet, TrendingUp, TrendingDown, Trash2, Calendar, Plus, PieChart as PieIcon } from 'lucide-react';
+import { SubmitButton } from '@/components/SubmitButton';
 
 // --- 1. CONFIGURATION ---
 const CATEGORIES = [
@@ -82,6 +83,10 @@ export default function Home() {
     }
     return null;
   };
+
+  const theme = activeTab === 'online' 
+    ? { bg: 'bg-indigo-600', light: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' }
+    : { bg: 'bg-emerald-600', light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100' };
 
   return (
     <main className="min-h-screen bg-[#0B0C15] text-white p-4 md:p-8 flex justify-center selection:bg-indigo-500/30">
@@ -245,9 +250,7 @@ export default function Home() {
               </select>
             </div>
             
-            <button type="submit" className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 ${txType === 'income' ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-red-600 shadow-red-500/20'}`}>
-              <Plus className="w-5 h-5" /> Add
-            </button>
+            <SubmitButton colorClass={theme.bg} />
           </form>
         </div>
 
