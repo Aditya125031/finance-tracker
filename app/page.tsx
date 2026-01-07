@@ -12,11 +12,11 @@ import { SubmitButton } from '@/components/SubmitButton';
 
 // --- 1. CONFIGURATION ---
 const CATEGORIES = [
-  'Food Essential', 'Food Ultimate', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping'
+  'Food Essential', 'Food Ultimate', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping', 'Medicine', 'Stationary'
 ];
 
 // Modern Neon Palette
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#6366f1', '#06b6d4'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#b92a2aff', '#8b5cf6', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
 
 type Transaction = {
   id: string;
