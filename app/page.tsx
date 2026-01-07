@@ -16,7 +16,7 @@ const CATEGORIES = [
 ];
 
 // Modern Neon Palette
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#b92a2aff', '#8b5cf6', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
+const COLORS = ['#3b82f6', '#10b981', 'rgba(176, 75, 216, 1)', '#ffd35bff', 'rgba(215, 118, 93, 1)', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
 
 type Transaction = {
   id: string;
