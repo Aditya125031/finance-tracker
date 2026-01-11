@@ -12,11 +12,11 @@ import { SubmitButton } from '@/components/SubmitButton';
 
 // --- 1. CONFIGURATION ---
 const CATEGORIES = [
-  'Food Essential', 'Food Ultimate', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping', 'Medicine', 'Stationary'
+  'Food Essential', 'Food Ultimate', 'Gym', 'Food order', 'Cafeteria', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping', 'Medicine', 'Stationary'
 ];
 
 // Modern Neon Palette
-const COLORS = ['#3b82f6', '#10b981', 'rgba(176, 75, 216, 1)', '#ffd35bff', 'rgba(215, 118, 93, 1)', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
+const COLORS = ['#3b82f6', '#10b981', '#6a00ff', '#fff700', '#ff005d','rgba(176, 75, 216, 1)', 'rgb(183, 151, 62)', 'rgba(215, 118, 93, 1)', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
 
 type Transaction = {
   id: string;
@@ -55,13 +55,11 @@ export default function Home() {
 
     // Daily Bar Chart Data
     const dailyMap = expenses.reduce((acc, t) => {
-      // Create a sortable date key YYYY-MM-DD
       const dateKey = new Date(t.createdAt).toISOString().split('T')[0];
       acc[dateKey] = (acc[dateKey] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
-    // Sort by date and format for display
     const dailyData = Object.keys(dailyMap)
       .sort()
       .map(date => ({
@@ -69,15 +67,27 @@ export default function Home() {
         value: dailyMap[date]
       }));
 
+    // --- NEW: Category Leaderboard (Ascending) ---
+    const catMap = expenses.reduce((acc, t) => {
+      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convert to array and sort by Value (Ascending: Low -> High)
+    const categoryLeaderboard = Object.keys(catMap)
+      .map(key => ({ name: key, value: catMap[key] }))
+      .sort((a, b) => a.value - b.value); 
+
     return {
       splitData: [
         { name: 'Online Spent', value: onlineTotal, color: '#3b82f6' },
         { name: 'Cash Spent', value: cashTotal, color: '#10b981' }
       ],
-      dailyData
+      dailyData,
+      categoryLeaderboard // Return the new sorted data
     };
   }, [transactions]);
-
+  
   // 3. Category & Budget Data (for Wallet views)
   const { categoryData, budgetData, totalIncome, totalExpense } = useMemo(() => {
     const expenses = currentData.filter(t => t.type === 'expense');
@@ -247,7 +257,45 @@ export default function Home() {
                   </ResponsiveContainer>
                 </div>
              </div>
+             {/* --- 3. NEW: Category Spending Board (Ascending) --- */}
+             <div className="md:col-span-2 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-rose-500 opacity-50" />
+                
+                <h3 className="font-bold text-slate-300 flex items-center gap-2 mb-6">
+                  <TrendingUp className="w-4 h-4 text-orange-400" /> Category Spending (Low to High)
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {overviewData.categoryLeaderboard.map((cat, index) => (
+                    <div key={cat.name} className="flex items-center justify-between bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-slate-400 text-xs font-bold font-mono">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-400 font-medium">{cat.name}</p>
+                          {/* Visual progress bar based on relative spending */}
+                          <div className="w-16 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className="h-full bg-indigo-500" 
+                              style={{ 
+                                width: `${(cat.value / Math.max(...overviewData.categoryLeaderboard.map(c => c.value))) * 100}%` 
+                              }} 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-white">₹{cat.value}</span>
+                    </div>
+                  ))}
+                  
+                  {overviewData.categoryLeaderboard.length === 0 && (
+                    <p className="col-span-full text-center text-slate-500 py-4">No expenses recorded yet.</p>
+                  )}
+                </div>
+             </div>
            </div>
+           
         ) : (
           /* --- WALLET DASHBOARD (Online/Cash) --- */
           <>
