@@ -25,7 +25,7 @@ type Transaction = {
   category: string;
   mode: string;
   type: string;
-  remarks?: string; // Added remarks field
+  remarks: string | null; 
   createdAt: Date;
 };
 
