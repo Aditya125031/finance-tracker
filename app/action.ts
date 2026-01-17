@@ -10,6 +10,8 @@
     const type = formdata.get('type') as string; // 'income' or 'expense'
     const dateStr = formdata.get('date') as string;
     const timestamp = dateStr ? new Date(dateStr) : new Date();
+    const remarks = formdata.get('remarks') as string || null;
+
     if (!amount || !category) return;
 
     await prisma.transaction.create({
@@ -17,8 +19,10 @@
         amount,
         category,
         mode,
+        remarks: remarks,
         type,
         createdAt: timestamp,
+        
         },
     });
     revalidatePath('/');

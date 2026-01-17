@@ -13,5 +13,6 @@ model Transaction{
   amount Float
   category String
   type String
+  remarks String?
   createdAt DateTime @default(now())
 }

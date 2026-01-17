@@ -7,16 +7,17 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid 
 } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, Trash2, Calendar, PieChart as PieIcon, BarChart3, LayoutDashboard } from 'lucide-react';
+import { 
+  Wallet, TrendingUp, TrendingDown, Trash2, Calendar, 
+  PieChart as PieIcon, BarChart3, LayoutDashboard, 
+  MessageSquare, AlertCircle 
+} from 'lucide-react';
 import { SubmitButton } from '@/components/SubmitButton';
 
 // --- 1. CONFIGURATION ---
-const CATEGORIES = [
-  'Food Essential', 'Food Ultimate', 'Gym', 'Food order', 'Cafeteria', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping', 'Medicine', 'Stationary'
+const CATEGORIES = ['Food Essential', 'Unknown expense','Food Ultimate', 'Gym', 'Food order', 'Cafeteria', 'Travel', 'General', 'Allowance', 'Bills', 'Shopping', 'Medicine', 'Stationary'
 ];
-
-// Modern Neon Palette
-const COLORS = ['#3b82f6', '#10b981', '#6a00ff', '#fff700', '#ff005d','rgba(176, 75, 216, 1)', 'rgb(183, 151, 62)', 'rgba(215, 118, 93, 1)', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
+const COLORS = ['#3b82f6', '#c7e6db','#10b981', '#6a00ff', '#fff700', '#ff005d','rgba(176, 75, 216, 1)', 'rgb(183, 151, 62)', 'rgba(215, 118, 93, 1)', '#6366f1', '#06b6d4', '#eb64faff', '#abf522ff'];
 
 type Transaction = {
   id: string;
@@ -24,6 +25,7 @@ type Transaction = {
   category: string;
   mode: string;
   type: string;
+  remarks?: string; // Added remarks field
   createdAt: Date;
 };
 
@@ -67,16 +69,18 @@ export default function Home() {
         value: dailyMap[date]
       }));
 
-    // --- NEW: Category Leaderboard (Ascending) ---
+    // Category Leaderboard
     const catMap = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
-    // Convert to array and sort by Value (Ascending: Low -> High)
     const categoryLeaderboard = Object.keys(catMap)
       .map(key => ({ name: key, value: catMap[key] }))
       .sort((a, b) => a.value - b.value); 
+
+    // --- NEW: Filter for Unknown Expenses ---
+    const unknownExpenses = transactions.filter(t => t.category === 'Unknown expense');
 
     return {
       splitData: [
@@ -84,7 +88,8 @@ export default function Home() {
         { name: 'Cash Spent', value: cashTotal, color: '#10b981' }
       ],
       dailyData,
-      categoryLeaderboard // Return the new sorted data
+      categoryLeaderboard,
+      unknownExpenses // Pass this to the dashboard
     };
   }, [transactions]);
   
@@ -93,7 +98,6 @@ export default function Home() {
     const expenses = currentData.filter(t => t.type === 'expense');
     const income = currentData.filter(t => t.type === 'income');
 
-    // Chart 1: Category Breakdown
     const grouped = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
@@ -104,7 +108,6 @@ export default function Home() {
       value: grouped[key]
     }));
 
-    // Chart 2: Budget Usage
     const totalInc = income.reduce((sum, t) => sum + t.amount, 0);
     const totalExp = expenses.reduce((sum, t) => sum + t.amount, 0);
     const remaining = totalInc - totalExp;
@@ -117,17 +120,15 @@ export default function Home() {
     return { categoryData: catData, budgetData: budData, totalIncome: totalInc, totalExpense: totalExp };
   }, [currentData]);
 
-  // Calculate Balance based on view
+  // Calculate Balance
   const displayBalance = useMemo(() => {
     if (activeTab === 'overview') {
-      // Total Net Worth
       return transactions.reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
     }
-    // Wallet specific balance
     return currentData.reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
   }, [transactions, currentData, activeTab]);
 
-  // Custom Tooltip for Charts
+  // Custom Tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -140,15 +141,13 @@ export default function Home() {
     return null;
   };
 
-  // Dynamic Theme Colors
-  const getTheme = () => {
+  const theme = (() => {
     switch(activeTab) {
-      case 'online': return { bg: 'bg-indigo-600', text: 'text-indigo-600', border: 'border-indigo-100' };
-      case 'cash': return { bg: 'bg-emerald-600', text: 'text-emerald-600', border: 'border-emerald-100' };
-      default: return { bg: 'bg-violet-600', text: 'text-violet-600', border: 'border-violet-100' };
+      case 'online': return { bg: 'bg-indigo-600', text: 'text-indigo-600' };
+      case 'cash': return { bg: 'bg-emerald-600', text: 'text-emerald-600' };
+      default: return { bg: 'bg-violet-600', text: 'text-violet-600' };
     }
-  };
-  const theme = getTheme();
+  })();
 
   return (
     <main className="min-h-screen bg-[#0B0C15] text-white p-4 pb-24 md:p-8 flex justify-center selection:bg-indigo-500/30">
@@ -164,8 +163,6 @@ export default function Home() {
         {/* --- HEADER CARD --- */}
         <div className="relative overflow-hidden rounded-3xl bg-slate-900/40 backdrop-blur-xl border border-white/10 p-6 md:p-8 shadow-2xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            
-            {/* Balance Section */}
             <div>
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Wallet className="w-4 h-4" />
@@ -178,7 +175,6 @@ export default function Home() {
               </h1>
             </div>
 
-            {/* Toggle Tabs */}
             <div className="w-full md:w-auto flex bg-black/30 p-1.5 rounded-xl border border-white/5 overflow-x-auto">
               {['overview', 'online', 'cash'].map((tab) => (
                 <button
@@ -238,33 +234,47 @@ export default function Home() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={overviewData.dailyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} vertical={false} />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#94a3b8', fontSize: 10}} 
-                        dy={10}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#94a3b8', fontSize: 10}} 
-                        tickFormatter={(val) => `₹${val}`}
-                      />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(val) => `₹${val}`} />
                       <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
                       <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
              </div>
-             {/* --- 3. NEW: Category Spending Board (Ascending) --- */}
+
+             {/* --- 3. UNKNOWN EXPENSES "SIDE SECTION" --- */}
+             {overviewData.unknownExpenses.length > 0 && (
+               <div className="md:col-span-2 bg-slate-900/40 backdrop-blur-md border border-rose-500/30 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500 opacity-80" />
+                 <h3 className="font-bold text-slate-200 flex items-center gap-2 mb-4">
+                   <AlertCircle className="w-5 h-5 text-rose-400" /> 
+                   Unknown Expense Log
+                   <span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full ml-2">Action Required</span>
+                 </h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {overviewData.unknownExpenses.map(t => (
+                      <div key={t.id} className="bg-black/20 p-4 rounded-xl border border-white/5 flex flex-col gap-2">
+                         <div className="flex justify-between items-start">
+                           <span className="text-xs text-slate-400 font-mono">{new Date(t.createdAt).toLocaleDateString()}</span>
+                           <span className="text-white font-bold font-mono">₹{t.amount}</span>
+                         </div>
+                         <div className="text-sm text-slate-300 italic">
+                           "{t.remarks || 'No remarks provided'}"
+                         </div>
+                         <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">{t.mode}</div>
+                      </div>
+                    ))}
+                 </div>
+               </div>
+             )}
+
+             {/* 4. Category Spending Board */}
              <div className="md:col-span-2 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-rose-500 opacity-50" />
-                
                 <h3 className="font-bold text-slate-300 flex items-center gap-2 mb-6">
                   <TrendingUp className="w-4 h-4 text-orange-400" /> Category Spending (Low to High)
                 </h3>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {overviewData.categoryLeaderboard.map((cat, index) => (
                     <div key={cat.name} className="flex items-center justify-between bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
@@ -274,35 +284,23 @@ export default function Home() {
                         </div>
                         <div>
                           <p className="text-sm text-slate-400 font-medium">{cat.name}</p>
-                          {/* Visual progress bar based on relative spending */}
                           <div className="w-16 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                            <div 
-                              className="h-full bg-indigo-500" 
-                              style={{ 
-                                width: `${(cat.value / Math.max(...overviewData.categoryLeaderboard.map(c => c.value))) * 100}%` 
-                              }} 
-                            />
+                            <div className="h-full bg-indigo-500" style={{ width: `${(cat.value / Math.max(...overviewData.categoryLeaderboard.map(c => c.value))) * 100}%` }} />
                           </div>
                         </div>
                       </div>
                       <span className="font-mono font-bold text-white">₹{cat.value}</span>
                     </div>
                   ))}
-                  
-                  {overviewData.categoryLeaderboard.length === 0 && (
-                    <p className="col-span-full text-center text-slate-500 py-4">No expenses recorded yet.</p>
-                  )}
                 </div>
              </div>
            </div>
-           
         ) : (
           /* --- WALLET DASHBOARD (Online/Cash) --- */
           <>
             {transactions.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                
-                {/* Spending Chart */}
+                {/* Charts (Pie & Budget) - Same as before */}
                 <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden flex flex-col">
                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-50" />
                    <h3 className="font-bold text-slate-300 flex items-center gap-2 mb-4">
@@ -312,9 +310,7 @@ export default function Home() {
                      <ResponsiveContainer width="100%" height="100%">
                        <PieChart>
                          <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
-                           {categoryData.map((entry, index) => (
-                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                           ))}
+                           {categoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                          </Pie>
                          <Tooltip content={<CustomTooltip />} />
                          <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', opacity: 0.7, paddingTop: '10px' }} />
@@ -322,8 +318,6 @@ export default function Home() {
                      </ResponsiveContainer>
                    </div>
                 </div>
-
-                {/* Budget Chart */}
                 <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 shadow-xl relative overflow-hidden flex flex-col">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-green-500 opacity-50" />
                    <div className="flex justify-between items-center mb-4">
@@ -336,8 +330,7 @@ export default function Home() {
                      <ResponsiveContainer width="100%" height="100%">
                        <PieChart>
                          <Pie data={budgetData} cx="50%" cy="50%" startAngle={180} endAngle={0} innerRadius={60} outerRadius={80} paddingAngle={0} dataKey="value" stroke="none">
-                           <Cell fill="#ef4444" /> 
-                           <Cell fill="#10b981" />
+                           <Cell fill="#ef4444" /> <Cell fill="#10b981" />
                          </Pie>
                          <Tooltip content={<CustomTooltip />} />
                        </PieChart>
@@ -351,25 +344,13 @@ export default function Home() {
               </div>
             )}
 
-            {/* --- INPUT FORM --- */}
+            {/* --- INPUT FORM WITH REMARKS --- */}
             <div className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-4 md:p-6 shadow-xl">
               <div className="flex gap-3 mb-6">
-                  <button 
-                    onClick={() => setTxType('expense')} 
-                    className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all border ${
-                      txType === 'expense' 
-                      ? 'bg-red-500/10 border-red-500/50 text-red-400' 
-                      : 'bg-slate-800/50 border-transparent text-slate-500 hover:bg-slate-800'
-                    }`}>
+                  <button onClick={() => setTxType('expense')} className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all border ${txType === 'expense' ? 'bg-red-500/10 border-red-500/50 text-red-400' : 'bg-slate-800/50 border-transparent text-slate-500 hover:bg-slate-800'}`}>
                     <TrendingDown className="w-4 h-4" /> Expense
                   </button>
-                  <button 
-                    onClick={() => setTxType('income')} 
-                    className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all border ${
-                      txType === 'income' 
-                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' 
-                      : 'bg-slate-800/50 border-transparent text-slate-500 hover:bg-slate-800'
-                    }`}>
+                  <button onClick={() => setTxType('income')} className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all border ${txType === 'income' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-slate-800/50 border-transparent text-slate-500 hover:bg-slate-800'}`}>
                     <TrendingUp className="w-4 h-4" /> Income
                   </button>
               </div>
@@ -380,41 +361,54 @@ export default function Home() {
                   const newData = await getTransactions();
                   setTransactions(newData);
                 }} 
-                className="flex flex-col md:flex-row gap-4 items-stretch"
+                className="grid grid-cols-2 md:grid-cols-4 gap-4"
               >
                 <input type="hidden" name="mode" value={activeTab} />
                 <input type="hidden" name="type" value={txType} />
 
-                <div className="relative md:w-40">
+                {/* Date */}
+                <div className="relative col-span-1">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                     <Calendar className="w-4 h-4" />
                   </div>
-                  <input 
-                    name="date" 
-                    type="date" 
-                    defaultValue={today} 
-                    className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                    required 
-                  />
+                  <input name="date" type="date" defaultValue={today} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" required />
                 </div>
 
-                <div className="relative md:w-40">
+                {/* Amount */}
+                <div className="relative col-span-1">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
                   <input name="amount" type="number" placeholder="0" className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-8 pr-4 font-bold text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors" required />
                 </div>
                 
-                <div className="relative flex-1">
+                {/* Category */}
+                <div className="relative col-span-2 md:col-span-1">
                    <select name="category" defaultValue="" className="w-full h-full min-h-[48px] bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors appearance-none" required>
                      <option value="" disabled>Select Category</option>
                      {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-slate-900">{cat}</option>)}
                    </select>
                 </div>
                 
-                <SubmitButton colorClass={theme.bg} />
+                {/* Submit Button */}
+                <div className="col-span-2 md:col-span-1">
+                  <SubmitButton colorClass={theme.bg} />
+                </div>
+
+                {/* --- NEW: Message / Remarks Field (Full Width) --- */}
+                <div className="col-span-2 md:col-span-4 relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <input 
+                    name="remarks" 
+                    type="text" 
+                    placeholder="Add a remark (e.g., 'Lunch with Dave', 'Forgot what this was')..." 
+                    className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
               </form>
             </div>
 
-            {/* --- TRANSACTION LIST --- */}
+            {/* --- TRANSACTION LIST WITH REMARKS --- */}
             <div className="space-y-3 pb-8">
                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest pl-2">Recent Transactions</h3>
                {currentData.map((t) => (
@@ -423,8 +417,16 @@ export default function Home() {
                      <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                         {t.type === 'income' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                      </div>
-                     <div className="min-w-0">
+                     <div className="min-w-0 flex flex-col">
                        <p className="font-bold text-slate-200 truncate">{t.category}</p>
+                       
+                       {/* --- DISPLAY REMARK --- */}
+                       {t.remarks && (
+                         <p className="text-xs text-indigo-300/80 truncate flex items-center gap-1 mt-0.5">
+                           <MessageSquare className="w-3 h-3" /> {t.remarks}
+                         </p>
+                       )}
+                       
                        <p className="text-xs text-slate-500 font-mono mt-0.5">{new Date(t.createdAt).toLocaleDateString()}</p>
                      </div>
                    </div>
@@ -432,7 +434,6 @@ export default function Home() {
                      <span className={`font-mono font-bold text-base md:text-lg ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                        {t.type === 'income' ? '+' : '-'} ₹{t.amount}
                      </span>
-                     
                      <button 
                         onClick={async () => {
                           if(confirm('Delete?')) {
@@ -447,16 +448,10 @@ export default function Home() {
                    </div>
                  </div>
                ))}
-               {currentData.length === 0 && (
-                 <div className="text-center py-12 text-slate-600">
-                   <p>No transactions found for this wallet.</p>
-                 </div>
-               )}
             </div>
           </>
         )}
-
       </div>
     </main>
-  );
+  )
 }
